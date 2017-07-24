@@ -1,0 +1,13 @@
+__*/
+__*.*
+!__init__.py
+*.sqlite3
+*.pyc
+*.log
+
+local_settings.py
+*.log
+!README.md
+# uwsgi related files
+*.uwsgi.ini
+*.conf

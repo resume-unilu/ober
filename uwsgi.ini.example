@@ -1,0 +1,17 @@
+[uwsgi]
+uid = nginx
+gid = nginx
+
+chdir        = /home/youruser/ober
+module       = ober.wsgi
+home         = /home/youruser/.virtualenvs/ober
+master       = true
+processes    = 2
+socket       = /var/www/ober/ober.sock 
+chmod-socket = 777
+
+vacuum       = true
+daemonize    = /var/www/ober/uwsgi.log
+
+safe-pidfile = /var/www/ober/ober.pid
+harakiri = 20
