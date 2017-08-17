@@ -8,7 +8,12 @@ class StoryAdmin(admin.ModelAdmin):
   exclude=[]
 
 
+class PublisherAdmin(admin.ModelAdmin):
+  list_display = ('name', 'endpoint', 'status', 'date_last_updated')
+  prepopulated_fields = {"slug": ("name",)}
+
+
 
 admin.site.register(Story, StoryAdmin)
 
-admin.site.register(Publisher)
+admin.site.register(Publisher, PublisherAdmin)

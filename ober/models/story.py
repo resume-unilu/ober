@@ -27,7 +27,7 @@ class Story(models.Model):
   # doi identifier, if any, e.g doi.org/10.25517/86fuhN8-1987
   doi       = models.URLField(max_length=100, blank=True, null=True)
   # original shorturl
-  short_url = models.CharField(max_length=22, db_index=True, unique=True)
+  short_url = models.CharField(max_length=22, db_index=True)
   # story data: titles etc..
   data      = JSONField(verbose_name=u'metadata contents', help_text='JSON format', default=dict(), blank=True)
   # date displayed (metadata)
@@ -46,6 +46,8 @@ class Story(models.Model):
   class Meta:
     ordering = ('-date_last_modified',)
     verbose_name_plural = 'stories'
+    unique_together = (('publisher', 'short_url'),)
+    
 
   @staticmethod
   def get_search_Q(query, raw=False):

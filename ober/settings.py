@@ -167,6 +167,16 @@ BROKER_URL = 'redis://localhost:6379/4'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = 'db+sqlite:///celery.sqlite'
+
+
+#............
+#
+# OBER
+# 
+#............
+OBER_REQUEST_TIMEOUT = (5.0, 30.0) # a tuple of (connect_timeout, read_timeout) in requests lib: response = requests.get(URL, timeout=OBER_REQUEST_TIMEOUT)
+
 
 #............
 #

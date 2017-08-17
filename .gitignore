@@ -11,3 +11,5 @@ local_settings.py
 # uwsgi related files
 *.uwsgi.ini
 *.conf
+
+*.sqlite
