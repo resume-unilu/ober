@@ -13,7 +13,8 @@ class Command(Taskcommand):
 
   available_tasks = (
     'crawl',
-    'kill'
+    'kill',
+    'simulate_crawl'
   )
 
   def crawl(self, pk, **options):
@@ -23,6 +24,18 @@ class Command(Taskcommand):
       pub.status = Publisher.READY
       pub.save()
     result = fetch_publisher.delay(pk=pub.pk)
+
+  def simulate_crawl(self, pk, **options):
+    qpk = {'pk': pk} if pk.isdigit() else {'slug': pk}
+    pub = Publisher.objects.get(**qpk)
+    if pub.status == Publisher.READY:
+      pub.status = Publisher.CRAWLING;
+      pub.save()
+    from time import sleep
+    sleep(5)
+    pub.status = Publisher.READY;
+    pub.save()
+
 
   def kill(self, pk, **options):
     qpk = {'pk': pk} if pk.isdigit() else {'slug': pk}

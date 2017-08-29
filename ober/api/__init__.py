@@ -1,1 +1,2 @@
 from story import StoryViewSet
+from publisher import PublisherViewSet

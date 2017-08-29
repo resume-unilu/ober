@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
+from django.views.generic import TemplateView
 
 from ober import api
 
@@ -22,10 +23,14 @@ from rest_framework import routers
 
 router = routers.DefaultRouter(trailing_slash=True)
 router.register(r'story', api.StoryViewSet)
+router.register(r'publisher', api.PublisherViewSet)
 
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^api/', include(router.urls)),
     url(r'^o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
+
+    url(r'^pulse/$', TemplateView.as_view(template_name='ober/pulse.html')),
+
 ]

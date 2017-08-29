@@ -2,34 +2,69 @@ from __future__ import absolute_import
 
 import os, json
 from django.core.serializers.json import DjangoJSONEncoder
+from django.conf import settings
 
 from celery import group
 from celery.utils.log import get_task_logger
-
+from celery.schedules import crontab
 
 from .celery import app
 
 from ober.models import Publisher, Story
 
+from ober.consumers import broadcast
+
 logger = get_task_logger('ober')
+logger.info('Celery task init')
 
 @app.task
 def test(param):
     return 'The test task executed with argument "%s" ' % param
 
+@app.on_after_finalize.connect
+def setup_periodic_tasks(sender, **kwargs):
+  '''
+  LOCK NEEDED @todo
+  http://docs.celeryproject.org/en/latest/tutorials/task-cookbook.html#cookbook-task-serialcelery beat
+  '''
+  try:
+    sender.add_periodic_task(
+      crontab(),
+      fetch_todo_publisher.s(),
+    )
+  except Exception as e:
+    logger.exception(e)
+  else:
+    logger.info('periodic task registered, system ready.')
+  
+
 
 
 @app.task
-def fetch_publishers():
-  # get publisher by pk
-  pubs = Publisher.objects.filter(status=Publisher.READY).values_list('pk', flat=True)
+def fetch_todo_publisher():
+  '''
+  Like fetch_publisher, but without knowing the PK beforehand.
+  '''
+  logger.info('Fetch next publisher to be crawled...')
+  if Publisher.objects.filter(status__in=[Publisher.CRAWLING, Publisher.PREFLIGHT]).exists():
+    logger.warning('Crawler is busy already crawling one publisher')
+    return None
 
-  job = group(fetch_publisher.apply_async(kwargs={
-    'pk': pk
-  }) for pk in pubs)
+  try:
+    pub = Publisher.objects.filter(status=Publisher.READY).earliest('date_last_crawled')
+  except Publisher.DoesNotExist:
+    logger.warning('No publisher is ready to be crawled yet')
+  except Exception as e:
+    logger.exception(e)
+  else:
+    pub.status = Publisher.PREFLIGHT
+    pub.save()
 
-  print job.count()
-  return job
+    logger.info('Adding publisher to queue (pk:{1}, name:{0})'.format(pub.name, pub.pk))
+
+    fetch_publisher_stories.apply_async(kwargs={
+      'pk': pub.pk
+    })
   # r = requests.get(url)
   # return r.status_code
 
@@ -37,7 +72,7 @@ def fetch_publishers():
 def fetch_publisher(pk, timeout=(2.0, 30.0)):
   # get list of urls to scrape. Then stuff then change the status
   try:
-    pub = Publisher.objects.get(pk=pk)
+    pub = Publisher.objects.filter(status=Publisher.READY).get(pk=pk)
   except Publisher.DoesNotExist:
     logger.error('Publisher (pk:{0}) not found !'.format(pk))
     return None
@@ -61,7 +96,7 @@ def fetch_publisher_stories(pk, timeout=(2.0, 30.0), params=dict()):
   try:
     pub = Publisher.objects.get(pk=pk)
   except Publisher.DoesNotExist:
-    logger.warning('Publisher (pk:{0}) not found !'.format(pk, Publisher.READY))
+    logger.warning('Publisher (pk:{0}) not found !'.format(pk))
     return None
   except Exception as e:
     logger.exception(e)
