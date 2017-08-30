@@ -135,7 +135,7 @@ def fetch_publisher_stories(pk, timeout=(2.0, 30.0), params=dict()):
     logger.exception(e)
     pub.status = Publisher.ERROR
     pub.save()
-    logger.warning('Publisher (pk:{0}) unable to connect: {2}'.format(pk, e.message))
+    logger.warning('Publisher (pk:{0}) unable to connect: {1}'.format(pk, e.message))
   else:
     if pub.status != Publisher.CRAWLING:
       pub.status = Publisher.CRAWLING
