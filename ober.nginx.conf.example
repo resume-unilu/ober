@@ -1,0 +1,23 @@
+upstream django {
+    server unix:///var/www/ober/ober.sock;
+
+}
+
+server {
+  # the port your site will be served on
+  listen      8282;
+  # the domain name it will serve for
+  server_name "";#dev.resume.uni.lu #.example.com; # substitute your machine's IP address or FQDN
+  charset     utf-8;
+
+  # max upload size
+  client_max_body_size 75M;   # adjust to taste  
+
+  access_log /var/log/nginx/ober.access.log combined;
+  error_log /var/log/nginx/ober.error.log;
+
+  location / {
+    uwsgi_pass  django;
+    include     /home/devuser/ober/uwsgi_params; # the uwsgi_params file you installed
+  }
+}
