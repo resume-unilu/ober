@@ -154,7 +154,7 @@ def fetch_publisher_stories(pk, timeout=(2.0, 30.0), params=dict()):
       url = _story.get(u'url', os.path.join(pub.endpoint, '%s' % _story.get('id')))
       
       story, created = Story.objects.get_or_create(publisher=pub, short_url=_story[u'short_url'], defaults={
-        'data': _story[u'data'],
+        'data': _story,
         'title': _story.get(u'slug', ''),
         'date': _story[u'date'],
         'url': url,
