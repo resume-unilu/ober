@@ -13,3 +13,5 @@ local_settings.py
 *.conf
 
 *.sqlite
+
+celerybeat-schedule

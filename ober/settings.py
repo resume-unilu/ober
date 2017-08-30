@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'oauth2_provider',
     'rest_framework',
 
+    'channels',
     'ober',
 ]
 
@@ -61,7 +62,7 @@ ROOT_URLCONF = 'ober.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [ os.path.join(BASE_DIR, 'templates') ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -164,6 +165,43 @@ CACHES = {
     },
 }
 
+
+#............
+#
+# CHANNELS SETTINGS
+# 
+#............
+CHANNEL_LAYERS = {
+   "default": {
+       "BACKEND": "asgi_redis.RedisChannelLayer",  # use redis backend
+       "CONFIG": {
+           "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379/4')],  # set redis address
+       },
+      "ROUTING": "ober.routing.channel_routing",  # load routing from our routing.py file
+   },
+}
+
+OBER_EVENTS_CONNECT    = 'OBER_EVENTS_CONNECT'
+OBER_EVENTS_DISCONNECT = 'OBER_EVENTS_DISCONNECT'
+OBER_EVENTS_BROADCAST  = 'OBER_EVENTS_RECEIVE'
+
+OBER_EVENTS_FETCH_PUBLISHER    = 'OBER_EVENTS_FETCH_PUBLISHER'
+OBER_EVENTS_CREATE_PUBLISHER   = 'OBER_EVENTS_CREATE_PUBLISHER'
+OBER_EVENTS_UPDATE_PUBLISHER   = 'OBER_EVENTS_UPDATE_PUBLISHER'
+OBER_EVENTS_CRAWLING_PUBLISHER = 'OBER_EVENTS_CRAWLING_PUBLISHER'
+OBER_EVENTS_PUBLISHER_CRAWLING_UPDATED = 'OBER_EVENTS_PUBLISHER_CRAWLING_UPDATED'
+
+# OBER_EVENTS = (
+#   (OBER_EVENTS_CONNECT, 'websocket connect'),
+#   (OBER_EVENTS_DISCONNECT, 'websocket disconnect') , 
+#   (OBER_EVENTS_BROADCAST, 'websocket generic receive event'),
+
+#   (OBER_EVENTS_FETCH_PUBLISHER, 'quick description'),
+#   (OBER_EVENTS_CREATE_PUBLISHER, 'this publisher has been created'),
+#   (OBER_EVENTS_UPDATE_PUBLISHER, 'this publisher has updates'),
+#   (OBER_EVENTS_PUBLISHER_CRAWLING_UPDATED, 'this publisher crawling activity has been updated')
+# )
+
 #............
 #
 # CELERY
@@ -199,6 +237,12 @@ LOGGING = {
             'filename': os.path.join(BASE_DIR, 'logs', 'debug.log'),
             'formatter': 'lite'
         },
+        'routing': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'routing.log'),
+            'formatter': 'lite'
+        },
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
@@ -223,6 +267,11 @@ LOGGING = {
         },
         'ober': {
             'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'ober.routing': {
+            'handlers': ['routing'],
             'level': 'DEBUG',
             'propagate': True,
         },

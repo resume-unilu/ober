@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+  <meta charset="utf-8" />
+  <title>WebSocket Test</title>
+  <style>
+    body{
+      font-family: 'Inconsolata', monospace;
+      font-size:13px;
+      line-height: 21px;
+    }
+
+    p{
+      margin: 5px 0;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
+  <script language="javascript" type="text/javascript">
+
+  var wsUri = "ws://localhost:7000/";
+  var output, websocket, wstimer;
+
+  function init()
+  {
+    output = document.getElementById("output");
+    testWebSocket();
+  }
+
+  function reconnect() {
+    console.log('WebSocketClient: retry');
+    if(wstimer)
+      clearTimeout(wstimer)
+
+    wstimer = setTimeout(function(){
+      console.log("WebSocketClient: reconnecting...");
+      testWebSocket()
+    }, 1000);
+  }
+
+  function testWebSocket()
+  {
+    websocket = new WebSocket(wsUri);
+    websocket.onopen = function(evt) { onOpen(evt) };
+    websocket.onclose = function(evt) { onClose(evt) };
+    websocket.onmessage = function(evt) { onMessage(evt) };
+    websocket.onerror = function(evt) { onError(evt) };
+  }
+
+  function onOpen(evt)
+  {
+    writeToScreen("CONNECTED");
+    doSend("WebSocket rocks");
+  }
+
+  function onClose(evt)
+  {
+    console.log(evt);
+    writeToScreen("DISCONNECTED");
+    reconnect()
+    // ('try reconnecting in 3 seconds')
+  }
+
+  function onMessage(evt)
+  {
+    writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data+'</span>');
+    // websocket.close();
+  }
+
+  function onError(evt)
+  {
+    writeToScreen('<span style="color: red;">ERROR:</span> ' + evt.data);
+  }
+
+  function doSend(message)
+  {
+    writeToScreen("SENT: " + message);
+    websocket.send(message);
+  }
+
+  function writeToScreen(message)
+  {
+    var pre = document.createElement("p");
+    pre.style.wordWrap = "break-word";
+    pre.innerHTML = message;
+    output.appendChild(pre);
+  }
+
+  window.addEventListener("load", init, false);
+
+  </script>
+
+  <h2>WebSocket Test</h2>
+
+  <div id="output"></div>

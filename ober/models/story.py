@@ -13,7 +13,8 @@ from django.dispatch import receiver
 from ober.helpers import get_cache_key
 
 from ober.models import Publisher
-
+from ober.postgres import RawSearchQuery
+    
 
 logger = logging.getLogger('miller')
 
@@ -37,6 +38,7 @@ class Story(models.Model):
 
   # add huge search field
   search_vector = SearchVectorField(null=True, blank=True)
+  search_text   = models.TextField(null=True, blank=True)
   # publisher!
   publisher = models.ForeignKey(Publisher, related_name='stories', blank=True, null=True, on_delete=models.CASCADE)
 
@@ -50,13 +52,22 @@ class Story(models.Model):
     
 
   @staticmethod
-  def get_search_Q(query, raw=False):
+  def get_search_Q(query, raw=False, config='simple'):
     """
     Return search queryset for this model, ranked by weight. Check update_search_vector function for more info
     """
-    from ober.postgres import RawSearchQuery
     #' & '.join(map(lambda x: x if x.endswith(':*') else '%s:*' % x, query.split(' ')))
-    return models.Q(search_vector=RawSearchQuery(query, config='simple'))
+    return models.Q(search_vector=RawSearchQuery(query, config=config))
+
+
+  @staticmethod
+  def annotate_search_headline(query, queryset, config='simple'):
+    # enrich with headline. 
+    raw = RawSearchQuery(query, config=config)
+    q   = raw.qparse(query=query)
+
+    from django.db.models import Func, F, Value
+    return queryset.annotate(search_headline=Func(Value(config), F('search_text'), Func(Value(q), function='to_tsquery'), Value('MinWords=10,MaxWords=20'),function='ts_headline'))
 
 
   def update_search_vector(self):
@@ -106,20 +117,22 @@ class Story(models.Model):
     
     q = ' || '.join(["setweight(to_tsvector('simple', COALESCE(%%s,'')), '%s')" % weight for value, weight, _config in contents])
 
+
     # print contents
 
     with connection.cursor() as cursor:
       cursor.execute(''.join(["""
-        UPDATE ober_story SET search_vector = x.weighted_tsv FROM (  
+        UPDATE ober_story SET search_vector = x.weighted_tsv, search_text=x.text FROM (  
           SELECT id,""",
             q,
           """
-                AS weighted_tsv
+                AS weighted_tsv,
+            %s as text
             FROM ober_story
           WHERE ober_story.id=%s
         ) AS x
         WHERE x.id = ober_story.id
-      """]), [value for value, _w, _c in contents] +  [self.id])
+      """]), [value for value, _w, _c in contents] +  ['\n\n'.join([value for value, weight, _config in contents])] + [self.id])
 
     logger.debug('story {pk:%s, title:%s} search_vector updated.'%(self.pk, self.title))
     
