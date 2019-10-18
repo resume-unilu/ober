@@ -16,7 +16,7 @@ django-oauth-toolkit==1.0.0
 django-redis-cache==1.7.1
 django-render-block==0.5
 django-templated-email==2.2.0
-djangorestframework==3.6.3
+djangorestframework==3.9.1
 hyperlink==17.3.1
 idna==2.5
 incremental==17.5.0
